@@ -6,7 +6,8 @@ api = Namespace('users', description='User operations')
 user_model = api.model('User', {
     'first_name': fields.String(required=True, description='First name'),
     'last_name': fields.String(required=True, description='Last name'), 
-    'email': fields.String(required=True, description='Email address')
+    'email': fields.String(required=True, description='Email address'),
+    'password': fields.String(required=True, description='Password')
 })
 
 @api.route('/')
@@ -15,9 +16,17 @@ class UserList(Resource):
     def post(self):
         """Create a new user"""
         data = api.payload
+
+        if 'password' not in data:
+            return {'error': 'password is required'}, 400
+        
         try:
             user = facade.create_user(data)
-            return user.to_dict(), 201
+            return {
+                'message': 'User created successfully',
+                'user_id': user.id,
+                'user': user.to_dict()  # SANS password
+            }, 201
         except ValueError as e:
             return {'error': str(e)}, 400
     

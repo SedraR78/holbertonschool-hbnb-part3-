@@ -1,12 +1,14 @@
 from .base_model import BaseModel
 
+
 class User(BaseModel):
-    def __init__(self,first_name,last_name,email,is_admin=False):
+    def __init__(self,first_name,last_name,email,is_admin=False, password=None):
         super().__init__() 
         self.first_name = first_name
         self.last_name = last_name
         self.email = email
         self.is_admin = is_admin
+        self.password = None 
         self._constraints()
         
     def _constraints(self):
@@ -27,8 +29,29 @@ class User(BaseModel):
 
     def hash_password(self, password):
         """Hashes the password before storing it."""
+        from app import bcrypt
         self.password = bcrypt.generate_password_hash(password).decode('utf-8')
 
     def verify_password(self, password):
         """Verifies if the provided password matches the hashed password."""
+        from app import bcrypt
         return bcrypt.check_password_hash(self.password, password)
+    
+    def to_dict(self):
+        """Override BaseModel's to_dict to EXCLUDE password"""
+        """ calls to_dict of the parents with  id, created_at, etc."""
+        data = super().to_dict()
+        
+        """ Ajoute les champs User mais EXCLUT password"""
+        user_data = {
+            **data,
+            'first_name': self.first_name,
+            'last_name': self.last_name,
+            'email': self.email,
+            'is_admin': self.is_admin
+        
+        }
+        """make sure to delete password """
+        user_data.pop('password', None)
+        
+        return user_data
