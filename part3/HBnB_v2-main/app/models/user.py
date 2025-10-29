@@ -2,11 +2,12 @@ from flask_bcrypt import Bcrypt
 from .basemodel import BaseModel
 import re
 
-brypt = Bcrypt()
+bcrypt = Bcrypt()
+
 class User(BaseModel):
     emails = set()
 
-    def __init__(self, first_name, last_name, email, is_admin=False, password ):
+    def __init__(self, first_name, last_name, email, is_admin=False, password=None):
         super().__init__()
         self.first_name = first_name
         self.last_name = last_name
@@ -86,10 +87,18 @@ class User(BaseModel):
         """Add an amenity to the place."""
         self.reviews.remove(review)
 
-    def to_dict(self):
-        return {
+    def to_dict(self, exclude=None):
+        if exclude is None:
+            exclude = []
+
+        user_dict = {
             'id': self.id,
             'first_name': self.first_name,
             'last_name': self.last_name,
-            'email': self.email
+            'email': self.email,
         }
+
+        for key in exclude:
+            user_dict.pop(key, None)
+
+        return user_dict
