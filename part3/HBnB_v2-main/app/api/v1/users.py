@@ -7,7 +7,8 @@ api = Namespace('users', description='User operations')
 user_model = api.model('User', {
     'first_name': fields.String(required=True, description='First name of the user'),
     'last_name': fields.String(required=True, description='Last name of the user'),
-    'email': fields.String(required=True, description='Email of the user')
+    'email': fields.String(required=True, description='Email of the user'),
+    'password': fields.String(required=True, description='Password of the user')
 })
 
 @api.route('/')
@@ -27,7 +28,7 @@ class UserList(Resource):
 
         try:
             new_user = facade.create_user(user_data)
-            return new_user.to_dict(), 201
+            return new_user.to_dict(exclude = ['password']), 201
         except Exception as e:
             return {'error': str(e)}, 400
         
@@ -35,7 +36,7 @@ class UserList(Resource):
     def get(self):
         """Retrieve a list of users"""
         users = facade.get_users()
-        return [user.to_dict() for user in users], 200
+        return [user.to_dict(exclude = ['password']) for user in users], 200
     
 @api.route('/<user_id>')
 class UserResource(Resource):
@@ -46,7 +47,8 @@ class UserResource(Resource):
         user = facade.get_user(user_id)
         if not user:
             return {'error': 'User not found'}, 404
-        return user.to_dict(), 200
+        """ Exclude Password in Response """
+        return user.to_dict(exclude = ['password']), 200
 
     @api.expect(user_model)
     @api.response(200, 'User updated successfully')
@@ -59,6 +61,6 @@ class UserResource(Resource):
             return {'error': 'User not found'}, 404
         try:
             facade.update_user(user_id, user_data)
-            return user.to_dict(), 200
+            return user.to_dict(exclude = ['password']), 200
         except Exception as e:
             return {'error': str(e)}, 400

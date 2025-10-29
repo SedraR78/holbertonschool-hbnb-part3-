@@ -105,3 +105,4 @@ class Place(BaseModel):
             'amenities': self.amenities,
             'reviews': self.reviews
         }
+        
