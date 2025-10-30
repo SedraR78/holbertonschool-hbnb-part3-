@@ -32,7 +32,7 @@ class ReviewList(Resource):
             return {'error': 'User cannot review their own place'}, 400
         """Check for duplicate review """
         existing_reviews = facade.get_reviews_by_place(review_data['place_id'])
-        user_review = [r for r in existing_reviews if r.user_id == current_user]
+        user_review = [r for r in existing_reviews if r.user.id == current_user]
         if user_review:
             return {'error': 'You have already reviewed this place'}, 400
     

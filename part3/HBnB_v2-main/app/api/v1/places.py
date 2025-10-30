@@ -86,7 +86,7 @@ class PlaceResource(Resource):
         place = facade.get_place(place_id)
         if not place:
             return {'error': 'Place not found'}, 404
-        if place.owner_id != current_user:
+        if place.owner.id != current_user:
             return {'error': 'Unauthorized action'}, 403
         if not place:
             return {'error': 'Place not found'}, 404
