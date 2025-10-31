@@ -1,10 +1,10 @@
 from flask_restx import Namespace, Resource, fields
 from app.services import facade
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 
 api = Namespace('places', description='Place operations')
 
-# Define the models for related entities
+""" Define the models for related entities """
 amenity_model = api.model('PlaceAmenity', {
     'id': fields.String(description='Amenity ID'),
     'name': fields.String(description='Name of the amenity')
@@ -17,7 +17,7 @@ user_model = api.model('PlaceUser', {
     'email': fields.String(description='Email of the owner')
 })
 
-# Define the place model for input validation and documentation
+""" Define the place model for input validation and documentation """
 place_model = api.model('Place', {
     'title': fields.String(required=True, description='Title of the place'),
     'description': fields.String(description='Description of the place'),
@@ -38,7 +38,6 @@ class PlaceList(Resource):
     @api.response(403, 'Unauthorized action') 
     @jwt_required()
     def post(self):
-        
         """Register a new place"""
         place_data = api.payload
         current_user = get_jwt_identity()  
@@ -46,7 +45,7 @@ class PlaceList(Resource):
         """ Use the logged-in user as owner """
         place_data['owner_id'] = current_user  
         
-        """✅ Check if user exists"""
+        """ Check if user exists """
         user = facade.get_user(current_user)  
         if not user:
             return {'error': 'User not found'}, 400
@@ -81,18 +80,46 @@ class PlaceResource(Resource):
     @jwt_required()
     def put(self, place_id):
         """Update a place's information"""
-        current_user = get_jwt_identity()
+        current_user_id = get_jwt_identity()
+        claims = get_jwt()
+        
         place_data = api.payload
         place = facade.get_place(place_id)
+        
         if not place:
             return {'error': 'Place not found'}, 404
-        if place.owner.id != current_user:
+        
+        """ Allow admins to bypass ownership check """
+        if not claims.get('is_admin') and place.owner.id != current_user_id:
             return {'error': 'Unauthorized action'}, 403
-        if not place:
-            return {'error': 'Place not found'}, 404
+        
         try:
             facade.update_place(place_id, place_data)
             return {'message': 'Place updated successfully'}, 200
+        except Exception as e:
+            return {'error': str(e)}, 400
+
+    """ Add DELETE method with admin bypass """
+    @api.response(200, 'Place deleted successfully')
+    @api.response(404, 'Place not found')
+    @api.response(403, 'Unauthorized action')
+    @jwt_required()
+    def delete(self, place_id):
+        """Delete a place"""
+        current_user_id = get_jwt_identity()
+        claims = get_jwt()
+        
+        place = facade.get_place(place_id)
+        if not place:
+            return {'error': 'Place not found'}, 404
+        
+        """ Allow admins to bypass ownership check """
+        if not claims.get('is_admin') and place.owner.id != current_user_id:
+            return {'error': 'Unauthorized action'}, 403
+        
+        try:
+            facade.delete_place(place_id)
+            return {'message': 'Place deleted successfully'}, 200
         except Exception as e:
             return {'error': str(e)}, 400
 
@@ -130,4 +157,3 @@ class PlaceReviewList(Resource):
         if not place:
             return {'error': 'Place not found'}, 404
         return [review.to_dict() for review in place.reviews], 200
-    

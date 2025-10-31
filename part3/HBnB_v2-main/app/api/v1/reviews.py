@@ -1,6 +1,7 @@
 from flask_restx import Namespace, Resource, fields
 from app.services import facade
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
+
 api = Namespace('reviews', description='Review operations')
 
 # Define the review model for input validation and documentation
@@ -65,16 +66,18 @@ class ReviewResource(Resource):
     @jwt_required()
     def put(self, review_id):
         """Update a review's information"""
-        current_user = get_jwt_identity() 
+        current_user_id = get_jwt_identity()
+        claims = get_jwt()  # Get JWT claims to check admin status
+        
         review_data = api.payload
         review = facade.get_review(review_id)
+        
         if not review:
             return {'error': 'Review not found'}, 404
         
-        """Ownership check"""
-        if review.user_id != current_user:
+        # Allow admins to bypass ownership check
+        if not claims.get('is_admin') and review.user.id != current_user_id:
             return {'error': 'Unauthorized action'}, 403
-    
         
         try:
             facade.update_review(review_id, review_data)
@@ -86,13 +89,16 @@ class ReviewResource(Resource):
     @api.response(404, 'Review not found')
     @jwt_required()
     def delete(self, review_id):
-        current_user = get_jwt_identity() 
         """Delete a review"""
+        current_user_id = get_jwt_identity()
+        claims = get_jwt()  # Get JWT claims to check admin status
+        
         review = facade.get_review(review_id)
         if not review:
             return {'error': 'Review not found'}, 404
         
-        if review.user_id != current_user:
+        # Allow admins to bypass ownership check
+        if not claims.get('is_admin') and review.user.id != current_user_id:
             return {'error': 'Unauthorized action'}, 403
         
         try:
