@@ -5,6 +5,7 @@ Handles CRUD operations for users (Create, Read, Update).
 """
 from flask_restx import Namespace, Resource, fields
 from app.services import facade
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 
 api = Namespace('users', description='User operations')
 
@@ -29,8 +30,16 @@ class UserList(Resource):
     @api.expect(user_model, validate=True)
     @api.response(201, 'User successfully created')
     @api.response(400, 'Email already registered or invalid input')
+    @api.response(403, 'Admin privileges required')
+    @jwt_required()
     def post(self):
-        """Register a new user"""
+        """Register a new user
+            ADMIN ONLY: Only administrators can create new users."""
+        claims = get_jwt()
+        is_admin = claims.get('is_admin', False)
+
+        if not is_admin:
+            return {'error': 'Admin privileges reqauired to create users'}, 403
         user_data = api.payload
 
         # Password validation (at least 8 characters)
@@ -52,8 +61,10 @@ class UserList(Resource):
             return {'error': f'An error occurred: {str(e)}'}, 500
 
     @api.response(200, 'List of users retrieved successfully')
+    @jwt_required()
     def get(self):
-        """Retrieve a list of all users"""
+        """Retrieve a list of all users
+        Requires JWT authentication."""
         try:
             users = facade.get_all_users()
             return [user.to_dict() for user in users], 200  # Password excluded
@@ -65,6 +76,7 @@ class UserList(Resource):
 class UserResource(Resource):
     @api.response(200, 'User details retrieved successfully')
     @api.response(404, 'User not found')
+    @jwt_required()
     def get(self, user_id):
         """Get user details by ID"""
         try:
@@ -80,14 +92,32 @@ class UserResource(Resource):
     @api.response(200, 'User successfully updated')
     @api.response(404, 'User not found')
     @api.response(400, 'Invalid input data or email already registered')
+    @api.response(403, 'Unauthorized action')
+    @jwt_required()
     def put(self, user_id):
-        """Update user information"""
+        """Update user information
+        - Regular users can only update their own information
+        - Admins can update any user's information (including email)"""
         user_data = api.payload
 
         if not user_data:
             return {'error': 'No data provided for update'}, 400
 
         # Check if user exists
+        user = facade.get_user(user_id)
+        if not user_data:
+            return {'error': 'No data provided for update'}, 400
+        
+        # Get current user from jwt
+        current_user_id = get_jwt_identity()
+        claims = get_jwt()
+        is_admin = claims.get('is_admin', False)
+
+        # check if user updating their own info or is admin
+        if current_user_id != user_id and not is_admin:
+            return {'error': 'You can only update your own information'}, 403
+        
+        # check if user exists
         user = facade.get_user(user_id)
         if not user:
             return {'error': 'User not found'}, 404
@@ -105,3 +135,30 @@ class UserResource(Resource):
             return {'error': str(e)}, 400
         except Exception as e:
             return {'error': f'An error occurred while updating the user: {str(e)}'}, 500
+        
+    @api.response(204, 'User successfully deleted')
+    @api.response(404, 'User not found')
+    @api.response(403, 'Admin privileges required')
+    @jwt_required()
+    def delete(self, user_id):
+        """
+        Delete a user.
+        ADMIN ONLY: Only administrators can delete users.
+        """
+        # Check if current user is admin
+        claims = get_jwt()
+        is_admin = claims.get('is_admin', False)
+        
+        if not is_admin:
+            return {'error': 'Admin privileges required to delete users'}, 403
+        
+        # Check if user exists
+        user = facade.get_user(user_id)
+        if not user:
+            return {'error': 'User not found'}, 404
+        
+        try:
+            facade.delete_user(user_id)
+            return '', 204
+        except Exception as e:
+            return {'error': f'An error occurred: {str(e)}'}, 500

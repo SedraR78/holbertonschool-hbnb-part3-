@@ -4,7 +4,7 @@ Handles CRUD operations for places (Create, Read, Update).
 """
 from flask_restx import Namespace, Resource, fields
 from app.services import facade
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 
 api = Namespace('places', description='Place operations')
 
@@ -39,8 +39,13 @@ class PlaceList(Resource):
     @api.response(201, 'Place successfully created')
     @api.response(400, 'Invalid input data')
     @api.response(404, 'Owner not found')
+    @jwt_required()
     def post(self):
-        """Register a new place"""
+        """
+        Register a new place.
+        Requires JWT authentication.
+        The authenticated user becomes the owner.
+        """
         place_data = api.payload
         current_user_id = get_jwt_identity()
         place_data['owner_id'] = current_user_id
@@ -68,8 +73,7 @@ class PlaceList(Resource):
                 'longitude': new_place.longitude,
                 'owner_id': new_place.owner.id,
                 'amenities': [
-                    {
-                        'id': a.id,'name': a.name} for a in (new_place.amenities or [])
+                    {'id': a.id, 'name': a.name} for a in (new_place.amenities or [])
                 ],
                 'created_at': new_place.created_at.isoformat(),
                 'updated_at': new_place.updated_at.isoformat()
@@ -81,7 +85,10 @@ class PlaceList(Resource):
 
     @api.response(200, 'List of places retrieved successfully')
     def get(self):
-        """Retrieve a list of all places"""
+        """
+        Retrieve a list of all places.
+        Public endpoint - no authentication required.
+        """
         try:
             places = facade.get_all_places()
             return [
@@ -104,7 +111,10 @@ class PlaceResource(Resource):
     @api.response(200, 'Place details retrieved successfully')
     @api.response(404, 'Place not found')
     def get(self, place_id):
-        """Get place details by ID"""
+        """
+        Get place details by ID.
+        Public endpoint - no authentication required.
+        """
         try:
             place = facade.get_place(place_id)
             if not place:
@@ -124,8 +134,8 @@ class PlaceResource(Resource):
                     'email': place.owner.email
                 },
                 'amenities': [
-                    {
-                        'id': a.id,'name': a.name} for a in (place.amenities or [])],
+                    {'id': a.id, 'name': a.name} for a in (place.amenities or [])
+                ],
                 'reviews': [
                     {
                         'id': r.id,
@@ -150,17 +160,24 @@ class PlaceResource(Resource):
     @api.response(403, 'Unauthorized action')
     @jwt_required()
     def put(self, place_id):
-        """Update a place's information"""
+        """
+        Update a place's information.
+        - Regular users can only update their own places
+        - Admins can update any place (bypass ownership)
+        """
         place_data = api.payload
         current_user_id = get_jwt_identity()
+        claims = get_jwt()
+        is_admin = claims.get('is_admin', False)
 
         # Check if place exists
         place = facade.get_place(place_id)
         if not place:
             return {'error': 'Place not found'}, 404
         
-        if place.owner.id != current_user_id:
-            return {'error': 'Unauthorized action'}, 403
+        # Check ownership or admin status (ADMIN BYPASS)
+        if not is_admin and place.owner.id != current_user_id:
+            return {'error': 'Unauthorized action - You can only modify your own places'}, 403
 
         try:
             # Update amenities if provided
@@ -195,6 +212,35 @@ class PlaceResource(Resource):
             return {'error': str(e)}, 400
         except Exception as e:
             return {'error': f'An error occurred while updating: {str(e)}'}, 500
+    
+    @api.response(204, 'Place deleted successfully')
+    @api.response(404, 'Place not found')
+    @api.response(403, 'Unauthorized action')
+    @jwt_required()
+    def delete(self, place_id):
+        """
+        Delete a place.
+        - Regular users can only delete their own places
+        - Admins can delete any place (bypass ownership)
+        """
+        current_user_id = get_jwt_identity()
+        claims = get_jwt()
+        is_admin = claims.get('is_admin', False)
+        
+        # Check if place exists
+        place = facade.get_place(place_id)
+        if not place:
+            return {'error': 'Place not found'}, 404
+        
+        # Check ownership or admin status (ADMIN BYPASS)
+        if not is_admin and place.owner.id != current_user_id:
+            return {'error': 'Unauthorized action - You can only delete your own places'}, 403
+        
+        try:
+            facade.delete_place(place_id)
+            return '', 204
+        except Exception as e:
+            return {'error': f'An error occurred: {str(e)}'}, 500
 
 
 @api.route('/<place_id>/reviews')
@@ -203,7 +249,10 @@ class PlaceReviewList(Resource):
     @api.response(200, 'List of reviews for the place retrieved successfully')
     @api.response(404, 'Place not found')
     def get(self, place_id):
-        """Get all reviews for a specific place"""
+        """
+        Get all reviews for a specific place.
+        Public endpoint - no authentication required.
+        """
         try:
             # Check if place exists
             place = facade.get_place(place_id)
