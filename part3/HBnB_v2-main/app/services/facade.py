@@ -1,18 +1,30 @@
 from app.persistence.repository import InMemoryRepository
-from app.models.user import User
+from app.persistence.sqlalchemy_repository import SQLAlchemyRepository
+    
+# On commente les imports de models pour l'instant
+"""from app.models.user import User  
 from app.models.amenity import Amenity
 from app.models.place import Place
 from app.models.review import Review
+"""
 
 class HBnBFacade:
     def __init__(self):
+        # Pour l'instant, on garde InMemoryRepository
         self.user_repo = InMemoryRepository()
         self.amenity_repo = InMemoryRepository()
         self.place_repo = InMemoryRepository()
         self.review_repo = InMemoryRepository()
 
+        # PRÉPARE POUR SQLAlchemy (décommenter après Task 7):
+        # self.user_repo = SQLAlchemyRepository(User)
+        # self.amenity_repo = SQLAlchemyRepository(Amenity) 
+        # self.place_repo = SQLAlchemyRepository(Place)
+        # self.review_repo = SQLAlchemyRepository(Review)
+
     # USER
     def create_user(self, user_data):
+        from app.models.user import User  # Import local pour éviter les erreurs
         user = User(**user_data)
         self.user_repo.add(user)
         return user
@@ -31,6 +43,7 @@ class HBnBFacade:
     
     # AMENITY
     def create_amenity(self, amenity_data):
+        from app.models.amenity import Amenity
         amenity = Amenity(**amenity_data)
         self.amenity_repo.add(amenity)
         return amenity
@@ -46,6 +59,7 @@ class HBnBFacade:
 
     # PLACE
     def create_place(self, place_data):
+        from app.models.place import Place
         user = self.user_repo.get_by_attribute('id', place_data['owner_id'])
         if not user:
             raise KeyError('Invalid input data')
@@ -76,6 +90,7 @@ class HBnBFacade:
 
     # REVIEWS
     def create_review(self, review_data):
+        from app.models.review import Review
         user = self.user_repo.get(review_data['user_id'])
         if not user:
             raise KeyError('Invalid input data')
