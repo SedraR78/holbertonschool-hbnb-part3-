@@ -1,4 +1,4 @@
-from app import db
+from app.database import db
 from .repository import Repository  
 
 class SQLAlchemyRepository(Repository):

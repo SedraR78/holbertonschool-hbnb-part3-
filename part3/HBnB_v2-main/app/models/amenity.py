@@ -1,5 +1,5 @@
 from .basemodel import BaseModel
-from app import db
+from app.database import db
 
 class Amenity(BaseModel):
     __tablename__ = 'amenities'

@@ -1,4 +1,5 @@
-from app import db, bcrypt
+
+from app.database import db
 from .basemodel import BaseModel
 import re
 
@@ -11,7 +12,7 @@ class User(BaseModel):
     password = db.Column(db.String(128), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
     
-    # ✅ RELATIONS
+    
     places = db.relationship('Place', backref='owner', lazy=True, cascade='all, delete-orphan')
     reviews = db.relationship('Review', backref='user', lazy=True, cascade='all, delete-orphan')
     
@@ -29,11 +30,13 @@ class User(BaseModel):
             self.is_admin = kwargs.get('is_admin', False)
 
     def hash_password(self, password):
+        from app import bcrypt  
         self.password = bcrypt.generate_password_hash(password).decode('utf-8')
 
     def verify_password(self, password):
+        from app import bcrypt  
         return bcrypt.check_password_hash(self.password, password)
-
+    
     def to_dict(self, exclude=None):
         if exclude is None:
             exclude = []

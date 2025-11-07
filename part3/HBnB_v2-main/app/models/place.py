@@ -1,5 +1,5 @@
 from .basemodel import BaseModel
-from app import db
+from app.database import db
 
 # ✅ TABLE D'ASSOCIATION pour many-to-many
 place_amenity = db.Table('place_amenity',
