@@ -1,31 +1,28 @@
-from app.persistence.repository import InMemoryRepository
-from app.persistence.sqlalchemy_repository import SQLAlchemyRepository
-    
-# On commente les imports de models pour l'instant
-"""from app.models.user import User  
-from app.models.amenity import Amenity
-from app.models.place import Place
-from app.models.review import Review
-"""
+from app.persistence.user_repository import UserRepository
+from app.persistence.amenity_repository import AmenityRepository
+from app.persistence.place_repository import PlaceRepository  
+from app.persistence.review_repository import ReviewRepository
 
 class HBnBFacade:
     def __init__(self):
-        # Pour l'instant, on garde InMemoryRepository
-        self.user_repo = InMemoryRepository()
-        self.amenity_repo = InMemoryRepository()
-        self.place_repo = InMemoryRepository()
-        self.review_repo = InMemoryRepository()
-
-        # PRÉPARE POUR SQLAlchemy (décommenter après Task 7):
-        # self.user_repo = SQLAlchemyRepository(User)
-        # self.amenity_repo = SQLAlchemyRepository(Amenity) 
-        # self.place_repo = SQLAlchemyRepository(Place)
-        # self.review_repo = SQLAlchemyRepository(Review)
+        # ✅ SQLAlchemy activé
+        self.user_repo = UserRepository()
+        self.amenity_repo = AmenityRepository()
+        self.place_repo = PlaceRepository()
+        self.review_repo = ReviewRepository()
 
     # USER
     def create_user(self, user_data):
-        from app.models.user import User  # Import local pour éviter les erreurs
-        user = User(**user_data)
+        from app.models.user import User
+        
+        # ✅ CORRECTION : Création manuelle + hash password
+        user = User(
+            first_name=user_data['first_name'],
+            last_name=user_data['last_name'],
+            email=user_data['email']
+        )
+        user.hash_password(user_data['password'])
+        
         self.user_repo.add(user)
         return user
     
@@ -60,23 +57,9 @@ class HBnBFacade:
     # PLACE
     def create_place(self, place_data):
         from app.models.place import Place
-        user = self.user_repo.get_by_attribute('id', place_data['owner_id'])
-        if not user:
-            raise KeyError('Invalid input data')
-        del place_data['owner_id']
-        place_data['owner'] = user
-        amenities = place_data.pop('amenities', None)
-        if amenities:
-            for a in amenities:
-                amenity = self.get_amenity(a['id'])
-                if not amenity:
-                    raise KeyError('Invalid input data')
+        # ✅ SIMPLIFIÉ pour SQLAlchemy - utilise owner_id directement
         place = Place(**place_data)
         self.place_repo.add(place)
-        user.add_place(place)
-        if amenities:
-            for amenity in amenities:
-                place.add_amenity(amenity)
         return place
 
     def get_place(self, place_id):
@@ -91,22 +74,9 @@ class HBnBFacade:
     # REVIEWS
     def create_review(self, review_data):
         from app.models.review import Review
-        user = self.user_repo.get(review_data['user_id'])
-        if not user:
-            raise KeyError('Invalid input data')
-        del review_data['user_id']
-        review_data['user'] = user
-        
-        place = self.place_repo.get(review_data['place_id'])
-        if not place:
-            raise KeyError('Invalid input data')
-        del review_data['place_id']
-        review_data['place'] = place
-
+        # ✅ SIMPLIFIÉ pour SQLAlchemy - utilise user_id et place_id directement
         review = Review(**review_data)
         self.review_repo.add(review)
-        user.add_review(review)
-        place.add_review(review)
         return review
         
     def get_review(self, review_id):
@@ -125,11 +95,4 @@ class HBnBFacade:
         self.review_repo.update(review_id, review_data)
 
     def delete_review(self, review_id):
-        review = self.review_repo.get(review_id)
-        
-        user = self.user_repo.get(review.user.id)
-        place = self.place_repo.get(review.place.id)
-
-        user.delete_review(review)
-        place.delete_review(review)
         self.review_repo.delete(review_id)

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-
+from app.database import db 
 
 class Repository(ABC):
     @abstractmethod

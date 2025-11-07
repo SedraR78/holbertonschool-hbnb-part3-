@@ -1,6 +1,5 @@
-
 from app.database import db
-from .basemodel import BaseModel
+from .basemodel import BaseModel  
 import re
 
 class User(BaseModel):
@@ -12,31 +11,21 @@ class User(BaseModel):
     password = db.Column(db.String(128), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
     
-    
-    places = db.relationship('Place', backref='owner', lazy=True, cascade='all, delete-orphan')
-    reviews = db.relationship('Review', backref='user', lazy=True, cascade='all, delete-orphan')
-    
-    def __init__(self, **kwargs):
-        super().__init__()
-        if 'first_name' in kwargs:
-            self.first_name = kwargs['first_name']
-        if 'last_name' in kwargs:
-            self.last_name = kwargs['last_name']
-        if 'email' in kwargs:
-            self.email = kwargs['email']
-        if 'password' in kwargs:
-            self.hash_password(kwargs['password'])
-        if 'is_admin' in kwargs:
-            self.is_admin = kwargs.get('is_admin', False)
+    def __init__(self, first_name=None, last_name=None, email=None, is_admin=False):
+        # ⚠️ PAS de super().__init__()
+        self.first_name = first_name
+        self.last_name = last_name
+        self.email = email
+        self.is_admin = is_admin
 
     def hash_password(self, password):
-        from app import bcrypt  
+        from app import bcrypt
         self.password = bcrypt.generate_password_hash(password).decode('utf-8')
 
     def verify_password(self, password):
-        from app import bcrypt  
+        from app import bcrypt
         return bcrypt.check_password_hash(self.password, password)
-    
+
     def to_dict(self, exclude=None):
         if exclude is None:
             exclude = []
