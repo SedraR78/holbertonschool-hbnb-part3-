@@ -1,7 +1,7 @@
 from .basemodel import BaseModel
 from app.database import db
 
-# ✅ TABLE D'ASSOCIATION pour many-to-many
+
 place_amenity = db.Table('place_amenity',
     db.Column('place_id', db.String(36), db.ForeignKey('places.id'), primary_key=True),
     db.Column('amenity_id', db.String(36), db.ForeignKey('amenities.id'), primary_key=True)
@@ -16,10 +16,10 @@ class Place(BaseModel):
     latitude = db.Column(db.Float, nullable=False)
     longitude = db.Column(db.Float, nullable=False)
     
-    # ✅ FOREIGN KEYS
+    """ FOREIGN KEYS"""
     owner_id = db.Column(db.String(36), db.ForeignKey('users.id'), nullable=False)
     
-    # ✅ RELATIONS
+    """ RELATIONS"""
     reviews = db.relationship('Review', backref='place', lazy=True, cascade='all, delete-orphan')
     amenities = db.relationship('Amenity', secondary=place_amenity, lazy='subquery',
                                backref=db.backref('places', lazy=True))
@@ -39,21 +39,7 @@ class Place(BaseModel):
         if 'owner_id' in kwargs:
             self.owner_id = kwargs['owner_id']
 
-    # ... garde tes properties et setters
-    @property
-    def title(self):
-        return self._title
     
-    @title.setter
-    def title(self, value):
-        if not value:
-            raise ValueError("Title cannot be empty")
-        if not isinstance(value, str):
-            raise TypeError("Title must be a string")
-        self.is_max_length('title', value, 100)
-        self._title = value
-
-    # ... autres properties
 
     def to_dict(self):
         return {

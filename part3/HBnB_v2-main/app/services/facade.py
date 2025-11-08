@@ -5,17 +5,16 @@ from app.persistence.review_repository import ReviewRepository
 
 class HBnBFacade:
     def __init__(self):
-        # ✅ SQLAlchemy activé
+        """ SQL Alchemy """
         self.user_repo = UserRepository()
         self.amenity_repo = AmenityRepository()
         self.place_repo = PlaceRepository()
         self.review_repo = ReviewRepository()
 
-    # USER
+    
     def create_user(self, user_data):
         from app.models.user import User
         
-        # ✅ CORRECTION : Création manuelle + hash password
         user = User(
             first_name=user_data['first_name'],
             last_name=user_data['last_name'],
@@ -38,7 +37,7 @@ class HBnBFacade:
     def update_user(self, user_id, user_data):
         self.user_repo.update(user_id, user_data)
     
-    # AMENITY
+        """ AMENITY """
     def create_amenity(self, amenity_data):
         from app.models.amenity import Amenity
         amenity = Amenity(**amenity_data)
@@ -54,10 +53,10 @@ class HBnBFacade:
     def update_amenity(self, amenity_id, amenity_data):
         self.amenity_repo.update(amenity_id, amenity_data)
 
-    # PLACE
+        """ PLACE """
     def create_place(self, place_data):
         from app.models.place import Place
-        # ✅ SIMPLIFIÉ pour SQLAlchemy - utilise owner_id directement
+        
         place = Place(**place_data)
         self.place_repo.add(place)
         return place
@@ -71,10 +70,10 @@ class HBnBFacade:
     def update_place(self, place_id, place_data):
         self.place_repo.update(place_id, place_data)
 
-    # REVIEWS
+        """ REVIEWS """
     def create_review(self, review_data):
         from app.models.review import Review
-        # ✅ SIMPLIFIÉ pour SQLAlchemy - utilise user_id et place_id directement
+        
         review = Review(**review_data)
         self.review_repo.add(review)
         return review

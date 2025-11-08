@@ -12,7 +12,7 @@ class User(BaseModel):
     is_admin = db.Column(db.Boolean, default=False)
     
     def __init__(self, first_name=None, last_name=None, email=None, is_admin=False):
-        # ⚠️ PAS de super().__init__()
+
         self.first_name = first_name
         self.last_name = last_name
         self.email = email
