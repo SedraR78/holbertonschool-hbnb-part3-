@@ -1,6 +1,10 @@
 from abc import ABC, abstractmethod
 from app.database import db 
 
+"""
+Base repository interface defining standard CRUD operations
+All repository implementations must follow this contract
+"""
 class Repository(ABC):
     @abstractmethod
     def add(self, obj):
@@ -27,6 +31,11 @@ class Repository(ABC):
         pass
 
 
+"""
+InMemoryRepository -  no longer used
+This was the initial implementation using dictionary storage 
+Now replaced by SQLAlchemyRepository for database persistence
+
 class InMemoryRepository(Repository):
     def __init__(self):
         self._storage = {}
@@ -51,9 +60,14 @@ class InMemoryRepository(Repository):
 
     def get_by_attribute(self, attr_name, attr_value):
         return next((obj for obj in self._storage.values() if getattr(obj, attr_name) == attr_value), None)
+"""
 
 
-# AJOUTE ÇA - Le nouveau repository SQLAlchemy
+"""
+SQLAlchemy repository implementation for database operations
+Uses SQLite database for persistent storage (data survives server restarts)
+This is the production repository used by the application
+"""
 class SQLAlchemyRepository(Repository):
     def __init__(self, model):
         self.model = model

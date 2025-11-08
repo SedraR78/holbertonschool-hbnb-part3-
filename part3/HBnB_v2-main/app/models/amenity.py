@@ -4,7 +4,7 @@ from .basemodel import BaseModel
 class Amenity(BaseModel):
     __tablename__ = 'amenities'
     
-    # ✅ SUPPRIME le underscore pour que SQLAlchemy voie la colonne
+
     name = db.Column(db.String(50), nullable=False, unique=True)
     
     def __init__(self, **kwargs):
@@ -16,7 +16,7 @@ class Amenity(BaseModel):
     def to_dict(self):
         return {
             'id': self.id,
-            'name': self.name,  # ✅ Utilise self.name directement
+            'name': self.name,  
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None
         }
