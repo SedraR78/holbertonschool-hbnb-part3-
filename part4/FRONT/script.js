@@ -19,7 +19,7 @@ function setCookie(name, value, days = 7) {
 
 // Task 1: Login
 async function loginUser(email, password) {
-    const response = await fetch('http://127.0.0.1:5001/api/v1/login', {
+    const response = await fetch('http://127.0.0.1:5001/api/v1/auth/login', {  
         method: 'POST',
         headers: {
             'Content-Type': 'application/json'
@@ -31,7 +31,7 @@ async function loginUser(email, password) {
 
 // Task 2: Fetch places
 async function fetchPlaces(token) {
-    const response = await fetch('http://127.0.0.1:5001//api/v1/places', {
+    const response = await fetch('http://127.0.0.1:5001/api/v1/places/', {
         method: 'GET',
         headers: {
             'Authorization': `Bearer ${token}`,
@@ -43,18 +43,22 @@ async function fetchPlaces(token) {
     return await response.json();
 }
 
+
 // Task 2: Display places
 function displayPlaces(places) {
     const container = document.getElementById('places-list');
     if (!container) return;
 
+    container.innerHTML = '';                             // Clear the current content
+    
+    // Iterate over places data and create HTML elements
     container.innerHTML = places.map(place => `
         <div class="place-card">
             <h3>${place.name}</h3>
             <div class="place-price">$${place.price} per night</div>
             <a href="place.html?id=${place.id}" class="details-button">View Details</a>
         </div>
-    `).join('');
+    `).join('');                                          // Append to container
 }
 
 // Task 2: Price filter
