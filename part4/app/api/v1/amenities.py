@@ -2,7 +2,7 @@ from flask_restx import Namespace, Resource, fields
 from app.services import facade
 from flask_jwt_extended import jwt_required, get_jwt
 
-api = Namespace('amenities', description='Amenity operations')
+api = Namespace('amenities', description='Amenity operations', security='Bearer Auth')
 
 """ Define the amenity model for input validation and documentation """
 amenity_model = api.model('Amenity', {
@@ -11,6 +11,7 @@ amenity_model = api.model('Amenity', {
 
 @api.route('/')
 class AmenityList(Resource):
+    @api.doc(security=[])
     @api.expect(amenity_model)
     @api.response(201, 'Amenity successfully created')
     @api.response(400, 'Invalid input data')
@@ -28,6 +29,7 @@ class AmenityList(Resource):
             return {'error': str(e)}, 400
 
     @api.response(200, 'List of amenities retrieved successfully')
+    @api.doc(security=[])
     def get(self):
         """Retrieve a list of all amenities"""
         amenities = facade.get_all_amenities()
@@ -36,6 +38,7 @@ class AmenityList(Resource):
 
 @api.route('/<amenity_id>')
 class AmenityResource(Resource):
+    @api.doc(security=[])
     @api.response(200, 'Amenity details retrieved successfully')
     @api.response(404, 'Amenity not found')
     def get(self, amenity_id):

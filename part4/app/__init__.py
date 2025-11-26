@@ -18,11 +18,25 @@ def create_app(config_class="config.DevelopmentConfig"):
     app = Flask(__name__)
 
     app.config.from_object(config_class)
+
+    # JWT Configuration
+    app.config['JWT_SECRET_KEY'] = 'your-secret-key-change-this'  
+    app.config['JWT_ACCESS_TOKEN_EXPIRES'] = 3600  
     
-    # SIMPLER CORS SETUP - Put this right after app creation
+    
+    # CORS SETUP 
     CORS(app) 
+
+    authorizations = {
+        'Bearer Auth': {
+            'type': 'apiKey',
+            'in': 'header',
+            'name': 'Authorization',
+            'description': 'Enter: Bearer <your_token>'
+        }
+    }
     
-    api = Api(app, version='1.0', title='HBnB API', description='HBnB Application API')
+    api = Api(app, version='1.0', title='HBnB API', description='HBnB Application API', authorizations=authorizations, security='Bearer Auth')
 
     bcrypt.init_app(app)
     jwt.init_app(app)

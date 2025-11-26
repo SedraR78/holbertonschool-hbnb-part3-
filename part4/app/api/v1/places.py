@@ -2,7 +2,7 @@ from flask_restx import Namespace, Resource, fields
 from app.services import facade
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 
-api = Namespace('places', description='Place operations')
+api = Namespace('places', description='Place operations', security='Bearer Auth')
 
 """ Define the models for related entities """
 amenity_model = api.model('PlaceAmenity', {
@@ -57,6 +57,7 @@ class PlaceList(Resource):
             return {'error': str(e)}, 400
 
     @api.response(200, 'List of places retrieved successfully')
+    @api.doc(security=[])
     def get(self):
         """Retrieve a list of all places"""
         places = facade.get_all_places()
@@ -64,6 +65,7 @@ class PlaceList(Resource):
 
 @api.route('/<place_id>')
 class PlaceResource(Resource):
+    @api.doc(security=[]) 
     @api.response(200, 'Place details retrieved successfully')
     @api.response(404, 'Place not found')
     def get(self, place_id):
@@ -125,6 +127,7 @@ class PlaceResource(Resource):
 
 @api.route('/<place_id>/amenities')
 class PlaceAmenities(Resource):
+    @api.doc(security=[])
     @api.expect(amenity_model)
     @api.response(200, 'Amenities added successfully')
     @api.response(404, 'Place not found')
@@ -149,6 +152,7 @@ class PlaceAmenities(Resource):
 
 @api.route('/<place_id>/reviews/')
 class PlaceReviewList(Resource):
+    @api.doc(security=[])
     @api.response(200, 'List of reviews for the place retrieved successfully')
     @api.response(404, 'Place not found')
     def get(self, place_id):

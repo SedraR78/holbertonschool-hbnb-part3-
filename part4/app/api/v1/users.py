@@ -1,7 +1,7 @@
 from flask_restx import Namespace, Resource, fields
 from app.services import facade
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
-api = Namespace('users', description='User operations')
+api = Namespace('users', description='User operations', security='Bearer Auth')
 
 # Define the user model for input validation and documentation
 user_model = api.model('User', {
@@ -20,6 +20,7 @@ admin_user_update_model = api.model('AdminUserUpdate', {
 
 @api.route('/')
 class UserList(Resource):
+    @api.doc(security=[])
     @api.expect(user_model, validate=True)
     @api.response(201, 'User successfully created')
     @api.response(400, 'Email already registered')
@@ -39,6 +40,7 @@ class UserList(Resource):
         except Exception as e:
             return {'error': str(e)}, 400
         
+    @api.doc(security=[])    
     @api.response(200, 'List of users retrieved successfully')
     def get(self):
         """Retrieve a list of users"""
@@ -47,6 +49,7 @@ class UserList(Resource):
     
 @api.route('/<user_id>')
 class UserResource(Resource):
+    @api.doc(security=[])
     @api.response(200, 'User details retrieved successfully')
     @api.response(404, 'User not found')
     def get(self, user_id):

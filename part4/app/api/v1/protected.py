@@ -1,10 +1,19 @@
 from flask_restx import Namespace, Resource, fields
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 
-api = Namespace('protected', description='Protected endpoints')
+api = Namespace('protected', description='Protected endpoints', security='Bearer Auth')
+
+# Response model
+protected_response = api.model('ProtectedResponse', {
+    'message': fields.String(description='Response message'),
+    'is_admin': fields.Boolean(description='Admin status from token')
+})
 
 @api.route('/')
 class ProtectedResource(Resource):
+    @api.doc(security='Bearer Auth')  
+    @api.response(200, 'Success', protected_response)
+    @api.response(401, 'Unauthorized')
     @jwt_required()
     def get(self):
         """

@@ -2,7 +2,7 @@ from flask_restx import Namespace, Resource, fields
 from app.services import facade
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt
 
-api = Namespace('reviews', description='Review operations')
+api = Namespace('reviews', description='Review operations', security='Bearer Auth')
 
 """
 Review model for input validation
@@ -55,12 +55,14 @@ class ReviewList(Resource):
             return {'error': str(e)}, 400
 
     @api.response(200, 'List of reviews retrieved successfully')
+    @api.doc(security=[])
     def get(self):
         """Retrieve all reviews"""
         return [review.to_dict() for review in facade.get_all_reviews()], 200
 
 @api.route('/<review_id>')
 class ReviewResource(Resource):
+    @api.doc(security=[])
     @api.response(200, 'Review details retrieved successfully')
     @api.response(404, 'Review not found')
     def get(self, review_id):

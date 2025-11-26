@@ -3,7 +3,7 @@ from flask_jwt_extended import create_access_token
 from app.services import facade
 from app.models.user import User
 
-api = Namespace('auth', description='Authentication operations')
+api = Namespace('auth', description='Authentication operations', security=[])
 
 """
 Login request model for input validation
@@ -39,4 +39,7 @@ class Login(Resource):
         )
         
         """Step 4: Return access token to client"""
-        return {'access_token': access_token}, 200
+        return {
+            'access_token': access_token,
+            'token_type': 'bearer'
+        }, 200
