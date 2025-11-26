@@ -10,8 +10,8 @@ Review model for input validation
 review_model = api.model('Review', {
     'text': fields.String(required=True, description='Review content'),
     'rating': fields.Integer(required=True, description='Rating (1-5)'),
-    'user_id': fields.String(required=True, description='User ID'),
     'place_id': fields.String(required=True, description='Place ID')
+    # ⬆️ SUPPRIMÉ: 'user_id' - on utilise le token JWT à la place
 })
 
 @api.route('/')
@@ -28,27 +28,26 @@ class ReviewList(Resource):
         """
         current_user = get_jwt_identity()
         review_data = api.payload
-        review_data['user_id'] = current_user
         
-        """Validate place and user exist"""
+        """Validate place exists"""
         place = facade.get_place(review_data['place_id'])
         if not place:
             return {'error': 'Place not found'}, 400
-            
-        user = facade.get_user(review_data['user_id'])
-        if not user:
-            return {'error': 'User not found'}, 400
         
         """Prevent self-reviews and duplicates"""
-        if place.owner.id == current_user:
+        # ⬇️ CORRIGÉ: utilise owner_id au lieu de owner.id
+        if place.owner_id == current_user:
             return {'error': 'User cannot review their own place'}, 400
             
         existing_reviews = facade.get_reviews_by_place(review_data['place_id'])
-        user_review = [r for r in existing_reviews if r.user.id == current_user]
+        # ⬇️ CORRIGÉ: utilise user_id au lieu de user.id
+        user_review = [r for r in existing_reviews if r.user_id == current_user]
         if user_review:
             return {'error': 'You have already reviewed this place'}, 400
     
         try:
+            # ⬇️ Ajoute l'user_id du token pour la création
+            review_data['user_id'] = current_user
             new_review = facade.create_review(review_data)
             return new_review.to_dict(), 201
         except Exception as e:
@@ -91,7 +90,8 @@ class ReviewResource(Resource):
             return {'error': 'Review not found'}, 404
         
         """Check ownership or admin privileges"""
-        if not claims.get('is_admin') and review.user.id != current_user_id:
+        # ⬇️ CORRIGÉ: utilise user_id au lieu de user.id
+        if not claims.get('is_admin') and review.user_id != current_user_id:
             return {'error': 'Unauthorized action'}, 403
         
         try:
@@ -115,7 +115,8 @@ class ReviewResource(Resource):
             return {'error': 'Review not found'}, 404
         
         """Check ownership or admin privileges"""
-        if not claims.get('is_admin') and review.user.id != current_user_id:
+        # ⬇️ CORRIGÉ: utilise user_id au lieu de user.id
+        if not claims.get('is_admin') and review.user_id != current_user_id:
             return {'error': 'Unauthorized action'}, 403
         
         try:

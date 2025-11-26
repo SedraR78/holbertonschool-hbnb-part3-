@@ -24,7 +24,7 @@ class ProtectedResource(Resource):
     @jwt_required()
     def get(self):
         """
-        Protected endpoint - requires valid JWT token
+        Protected endpoint - requires valid JWT token   
         Returns user identity and admin status from token claims
         """
         current_user = get_jwt_identity()
