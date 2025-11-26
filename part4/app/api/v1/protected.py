@@ -11,7 +11,14 @@ protected_response = api.model('ProtectedResponse', {
 
 @api.route('/')
 class ProtectedResource(Resource):
-    @api.doc(security='Bearer Auth')  
+    @api.doc(
+        security='Bearer Auth',  # This tells Swagger it requires auth
+        description='Protected endpoint - requires valid JWT token. Click Authorize button first!',
+        responses={
+            200: 'Success - Returns user identity and admin status',
+            401: 'Unauthorized - Missing or invalid token'
+        }
+    )
     @api.response(200, 'Success', protected_response)
     @api.response(401, 'Unauthorized')
     @jwt_required()
