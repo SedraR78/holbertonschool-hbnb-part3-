@@ -11,7 +11,7 @@ review_model = api.model('Review', {
     'text': fields.String(required=True, description='Review content'),
     'rating': fields.Integer(required=True, description='Rating (1-5)'),
     'place_id': fields.String(required=True, description='Place ID')
-    # ⬆️ SUPPRIMÉ: 'user_id' - on utilise le token JWT à la place
+
 })
 
 @api.route('/')
@@ -90,7 +90,7 @@ class ReviewResource(Resource):
             return {'error': 'Review not found'}, 404
         
         """Check ownership or admin privileges"""
-        # ⬇️ CORRIGÉ: utilise user_id au lieu de user.id
+
         if not claims.get('is_admin') and review.user_id != current_user_id:
             return {'error': 'Unauthorized action'}, 403
         
@@ -115,7 +115,7 @@ class ReviewResource(Resource):
             return {'error': 'Review not found'}, 404
         
         """Check ownership or admin privileges"""
-        # ⬇️ CORRIGÉ: utilise user_id au lieu de user.id
+
         if not claims.get('is_admin') and review.user_id != current_user_id:
             return {'error': 'Unauthorized action'}, 403
         
